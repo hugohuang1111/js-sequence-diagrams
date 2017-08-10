@@ -162,6 +162,23 @@ if (typeof Snap != 'undefined') {
     },
 
     createText: function(text, font) {
+      const url_pattern = /^((?:(https?):\/\/)?((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9])\.(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9])\.)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9])\.)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9][0-9]|[0-9]))|(?:(?:(?:\w+\.){1,2}[\w]{2,3})))(?::(\d+))?((?:\/[\w]+)*)(?:\/|(\/[\w]+\.[\w]{3,4})|(\?(?:([\w]+=[\w]+)&)*([\w]+=[\w]+))?|\?(?:(wsdl|wadl))))$/gi;
+      var url_address = '';
+      text = text.split('^').map(function(x) {
+        return x.trim();
+      });
+      if (text.length > 1) {
+        url_address = text[text.length - 1];
+        const r = url_pattern.exec(url_address);
+        if (null == r) {
+          url_address = '';
+        } else {
+          text.splice(-1, 1);
+        }
+        text = text.join('^');
+      } else {
+        text = text[0];
+      }
       text = text.split('\n').map(function(x) {
           return x.trim();
       });
@@ -175,7 +192,15 @@ if (typeof Snap != 'undefined') {
         });
       }
 
-      return t;
+      if ('' != url_address) {
+        var a = this.paper_.el('a').attr({
+            href: url_address
+        });
+        a.add(t);
+        return a;
+      } else {
+        return t;
+      }
     },
 
     drawLine: function(x1, y1, x2, y2, linetype, arrowhead) {
@@ -212,7 +237,14 @@ if (typeof Snap != 'undefined') {
 
       // Now move the text into place
       // `y - bb.y` because text(..) is positioned from the baseline, so this moves it down.
-      t.attr({x: x - bb.x, y: y - bb.y});
+
+      x = x - bb.x;
+      y = y - bb.y;
+      if ('a' == t.type) {
+        t.selectAll('text').attr({x: x, y: y});
+      } else {
+        t.attr({x: x, y: y});
+      }
       t.selectAll('tspan').attr({x: x});
 
       this.pushToStack(t);
